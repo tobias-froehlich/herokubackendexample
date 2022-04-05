@@ -1,9 +1,11 @@
 package org.example;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpServer;
 import jakarta.servlet.Servlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletMapping;
+import jakarta.ws.rs.ext.MessageBodyWriter;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.ContextHandler;
@@ -12,10 +14,13 @@ import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.handler.ResourceHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
+import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
+import org.jooq.conf.RenderNameCase;
+import org.jooq.conf.RenderQuotedNames;
 import org.jooq.impl.DSL;
 
 import java.net.URI;
@@ -27,29 +32,6 @@ import java.util.Set;
 
 public class Main {
     public static void main(String[] args) throws Exception {
-
-//        ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
-//        context.setContextPath("/");
-//
-//        Server jettyServer = new Server(8080);
-//        jettyServer.setHandler(context);
-//
-//        ServletHolder jerseyServlet = context.addServlet(
-//                org.glassfish.jersey.servlet.ServletContainer.class, "/*");
-//        jerseyServlet.setInitOrder(0);
-//
-//
-//        jerseyServlet.setInitParameter(
-//                "jersey.config.server.provider.classnames",
-//                StudentResource.class.getCanonicalName());
-//
-//        try {
-//            jettyServer.start();
-//            jettyServer.join();
-//        } finally {
-//            jettyServer.destroy();
-//        }
-
 
         Connection connection = null;
         if (System.getenv("LOCAL_DB_URL") != null) {
@@ -71,30 +53,28 @@ public class Main {
             System.out.println("Connected to database.");
         }
 
-        Migrator migrator = new Migrator(connection);
+        DSLContext dslContext = DSL.using(connection, SQLDialect.POSTGRES);
+//        dslContext.settings().setRenderQuotedNames(RenderQuotedNames.ALWAYS);
+//        dslContext.settings().setRenderNameCase(RenderNameCase.LOWER);
+        Migrator migrator = new Migrator(dslContext);
         migrator.migrate();
 
         Server server = new Server(Integer.parseInt(System.getenv("PORT")));
 
-        ExampleContext exampleContext = new ExampleContext(connection);
-
         ServletContextHandler handler = new ServletContextHandler(ServletContextHandler.SESSIONS);
         handler.setContextPath("/");
 
-        final StudentDAO studentDao = new StudentDAO(connection);
+        final StudentDAO studentDao = new StudentDAO(dslContext);
         final StudentResource studentResource = new StudentResource(studentDao);
-        //ServletHolder holder = new ServletHolder(new ExampleServlet<StudentDAO, StudentResource>(studentDao, studentResource));
 
         ResourceConfig resourceConfig = new ResourceConfig();
         Set<Object> instances = new HashSet<>();
         instances.add(studentResource);
         resourceConfig.registerInstances(instances);
+        resourceConfig.register(JacksonFeature.class);
 
 
         handler.addServlet(new ServletHolder(new ServletContainer(resourceConfig)), "/*");
-
-        //handler.addServlet(new ServletHolder(new ExampleServlet<StudentDAO, StudentResource>(studentDao, studentResource)), "/student/*");
-
 
         server.setHandler(handler);
         server.start();

@@ -1,10 +1,16 @@
 package org.example;
 
-public class Student {
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import java.io.Serializable;
+
+public class Student implements Serializable {
     private String firstName;
     private String lastName;
 
-    public Student(String firstName, String lastName) {
+    public Student(
+            @JsonProperty("firstName") String firstName,
+            @JsonProperty("lastName") String lastName) {
         this.firstName = firstName;
         this.lastName = lastName;
     }
@@ -23,5 +29,34 @@ public class Student {
 
     public void setLastName(String lastName) {
         this.lastName = lastName;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (obj == this) {
+            return true;
+        }
+        if (!(obj instanceof Student)) {
+            return false;
+        }
+        Student other = (Student) obj;
+        if (!this.getFirstName().equals(other.getFirstName())) {
+            return false;
+        }
+        if (!this.getLastName().equals(other.getLastName())) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public String toString() {
+        return "Student{" +
+                "firstName='" + firstName + '\'' +
+                ", lastName='" + lastName + '\'' +
+                '}';
     }
 }

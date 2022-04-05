@@ -40,7 +40,7 @@ public class Migrator {
                     .to("first_name")
                     .execute();
         }));
-        migrationSteps.add(new MigrationStep("Creating APP_USER table.", cxt -> {
+        migrationSteps.add(new MigrationStep("Creating app_user table.", cxt -> {
             cxt.createTableIfNotExists("app_user")
                     .column("id", VARCHAR(36))
                     .column("version", VARCHAR(36))
@@ -48,20 +48,20 @@ public class Migrator {
                     .column("password", VARCHAR(36))
                     .execute();
         }));
-        migrationSteps.add(new MigrationStep("Adding Primary key to APP_USER table.", ctx -> {
+        migrationSteps.add(new MigrationStep("Adding Primary key to app_user table.", ctx -> {
             ctx.alterTable("app_user")
                     .alterColumn("id")
                     .setNotNull()
                     .execute();
             ctx.alterTable("app_user")
                     .add(
-                            DSL.constraint("pk_app_user").primaryKey("id")
+                            DSL.constraint("PK_app_user").primaryKey("id")
                     ).execute();
         }));
-        migrationSteps.add(new MigrationStep("Adding Unique constraint to APP_USER NAME.", cxt -> {
+        migrationSteps.add(new MigrationStep("Adding Unique constraint to app_user name.", cxt -> {
             cxt.alterTable("app_user")
                     .add(
-                            DSL.constraint("unique_constraint_app_user_name").unique("name")
+                            DSL.constraint("UNIQUE_CONSTRAINT_app_user_name").unique("name")
                     ).execute();
         }));
         migrationSteps.add(new MigrationStep("Add example data.", ctx -> {
@@ -78,7 +78,7 @@ public class Migrator {
 
     public void migrate() {
         dslContext.createTableIfNotExists("migration")
-                .column("number", INTEGER)
+                .column("NUMBER", INTEGER)
                 .execute();
 //        String query = "CREATE TABLE IF NOT EXISTS migration (number integer);";
 //        try (PreparedStatement statement = connection.prepareStatement(query)) {
@@ -90,7 +90,7 @@ public class Migrator {
             Integer count = dslContext
                     .selectCount()
                     .from("migration")
-                    .where(field("number").eq(i))
+                    .where(field("NUMBER").eq(i))
                     .fetchOne(0, Integer.class);
             boolean carriedOut = count != null && count > 0;
             if (carriedOut) {
@@ -110,7 +110,7 @@ public class Migrator {
                 break;
             }
             if (!carriedOut) {
-                dslContext.insertInto(table("migration"), field("number"))
+                dslContext.insertInto(table("migration"), field("NUMBER"))
                         .values(i)
                         .execute();
             }
