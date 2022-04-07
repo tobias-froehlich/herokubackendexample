@@ -1,17 +1,9 @@
 package org.example;
 
-import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -19,7 +11,7 @@ import static org.jooq.impl.DSL.field;
 import static org.jooq.impl.DSL.table;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class StudentDAOTest extends DAOTest {
+public class StudentDAOTest extends TestWithDB {
 
     private StudentDAO studentDAO;
 

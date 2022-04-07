@@ -40,28 +40,28 @@ public class Migrator {
                     .to("first_name")
                     .execute();
         }));
-        migrationSteps.add(new MigrationStep("Creating APP_USER table.", cxt -> {
-            cxt.createTableIfNotExists("app_user")
+        migrationSteps.add(new MigrationStep("Creating user table.", cxt -> {
+            cxt.createTableIfNotExists("user_account")
                     .column("id", VARCHAR(36))
                     .column("version", VARCHAR(36))
                     .column("name", VARCHAR(36))
                     .column("password", VARCHAR(36))
                     .execute();
         }));
-        migrationSteps.add(new MigrationStep("Adding Primary key to APP_USER table.", ctx -> {
-            ctx.alterTable("app_user")
+        migrationSteps.add(new MigrationStep("Adding Primary key to user table.", ctx -> {
+            ctx.alterTable("user_account")
                     .alterColumn("id")
                     .setNotNull()
                     .execute();
-            ctx.alterTable("app_user")
+            ctx.alterTable("user_account")
                     .add(
-                            DSL.constraint("pk_app_user").primaryKey("id")
+                            DSL.constraint("pk_user").primaryKey("id")
                     ).execute();
         }));
-        migrationSteps.add(new MigrationStep("Adding Unique constraint to APP_USER NAME.", cxt -> {
-            cxt.alterTable("app_user")
+        migrationSteps.add(new MigrationStep("Adding Unique constraint to user name.", cxt -> {
+            cxt.alterTable("user_account")
                     .add(
-                            DSL.constraint("unique_constraint_app_user_name").unique("name")
+                            DSL.constraint("unique_constraint_user_name").unique("name")
                     ).execute();
         }));
         migrationSteps.add(new MigrationStep("Add example data.", ctx -> {
@@ -74,6 +74,20 @@ public class Migrator {
                     .set(field("last_name"), "Lix")
                     .execute();
         }));
+//        migrationSteps.add(new MigrationStep("Add example user.", ctx -> {
+//            ctx.insertInto(table("user_account"))
+//                    .set(field("id"), "example-id")
+//                    .set(field("version"), "example-version")
+//                    .set(field("name"), "example-name")
+//                    .set(field("password"), "example-password")
+//                    .execute();
+//        }));
+    }
+
+    public void reset() {
+        dslContext.dropTableIfExists("migration").execute();
+        dslContext.dropTableIfExists("user_account").execute();
+        dslContext.dropTableIfExists("student").execute();
     }
 
     public void migrate() {
