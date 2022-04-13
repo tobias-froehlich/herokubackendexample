@@ -32,6 +32,5 @@ public class TestWithDB {
     @BeforeEach
     public void beforeEach() {
         dslContext.truncateTable("user_account").execute();
-        dslContext.truncateTable("student").execute();
     }
 }

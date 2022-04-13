@@ -88,12 +88,14 @@ public class UserDAOTest extends TestWithDB {
                 .set(field("id"), "test-id")
                 .set(field("version"), "test-version")
                 .set(field("name"), "John")
+                .set(field("normalized_name"), "john")
                 .set(field("password"), "johns-password")
                 .execute();
         dslContext.insertInto(table("user_account"))
                 .set(field("id"), "test-id2")
                 .set(field("version"), "test-version2")
                 .set(field("name"), "Joe")
+                .set(field("normalized_name"), "joe")
                 .set(field("password"), "joes-password")
                 .execute();
         String expected = "test-id";
@@ -141,6 +143,16 @@ public class UserDAOTest extends TestWithDB {
         assertThatThrownBy(() -> {
             userDAO.addUser(user);
         }).isInstanceOf(ApplicationException.class).hasMessage("Cannot insert user. User with name John already exists.");
+    }
+
+    @Test
+    public void testTryToAddUserTwiceWithDifferentSpelling() {
+        User user1 = new User(null, null, "John", "johns-password");
+        User addedUser = userDAO.addUser(user1);
+        User user2 = new User(null, null, "john", "johns-password");
+        assertThatThrownBy(() -> {
+            userDAO.addUser(user2);
+        }).isInstanceOf(ApplicationException.class).hasMessage("Cannot insert user. User with name john already exists.");
     }
 
     @Test

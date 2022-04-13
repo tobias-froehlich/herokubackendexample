@@ -71,7 +71,6 @@ public class Migrator {
     public void reset() {
         dslContext.dropTableIfExists("migration").execute();
         dslContext.dropTableIfExists("user_account").execute();
-        dslContext.dropTableIfExists("student").execute();
     }
 
     public void migrate() {
