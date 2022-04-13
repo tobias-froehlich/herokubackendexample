@@ -2,11 +2,17 @@ package org.example;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.Map;
+
 public class User {
     private String id;
     private String version;
     private String name;
     private String password;
+
+    private static final String VALID_CHARACTERS      = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZäöußÄÖÜẞΑαΒβΓγΔδΕεΖζΗηΘθΙιΚκΛλΜμΝνΞξΟοΠπΡρΣσςΤτΥυΦφΧχΨψΩω";
+    private static final String NORMALIZED_CHARACTERS = "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzaousaousaabbggddeezzhhttiikkllmmnnccoopprrsssttyyffxxppoo";
+    private static final int MAX_NAME_LENGTH = 16;
 
     public User(
             @JsonProperty("id") String id,
@@ -49,6 +55,29 @@ public class User {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public static boolean isNameValid(String name) {
+        if (name.length() > MAX_NAME_LENGTH) {
+            return false;
+        }
+        for(int i = 0; i < name.length(); i++) {
+            if (!VALID_CHARACTERS.contains(name.substring(i, i+1))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static String getNormalizedName(String name) {
+        int length = name.length();
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < length; i++) {
+            char c = name.charAt(i);
+            int index = VALID_CHARACTERS.indexOf(c);
+            sb.append(NORMALIZED_CHARACTERS.charAt(index));
+        }
+        return sb.toString();
     }
 
     @Override

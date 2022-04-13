@@ -1,5 +1,8 @@
 package org.example;
 
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.container.ContainerResponseContext;
+import jakarta.ws.rs.container.ContainerResponseFilter;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
@@ -10,6 +13,7 @@ import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
 
+import java.io.IOException;
 import java.net.URI;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -51,21 +55,27 @@ public class Main {
         ServletContextHandler handler = new ServletContextHandler(ServletContextHandler.SESSIONS);
         handler.setContextPath("/");
 
-        final StudentDAO studentDao = new StudentDAO(dslContext);
-        final StudentResource studentResource = new StudentResource(studentDao);
         final UserDAO userDAO = new UserDAO(dslContext);
         final UserResource userResource = new UserResource(userDAO, migrator);
 
         ResourceConfig resourceConfig = new ResourceConfig();
         Set<Object> instances = new HashSet<>();
-        instances.add(studentResource);
         instances.add(userResource);
         resourceConfig.registerInstances(instances);
         resourceConfig.register(new ApplicationExceptionMapper());
         resourceConfig.register(JacksonFeature.class);
+        resourceConfig.register(new ContainerResponseFilter() {
+                                    @Override
+                                    public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) throws IOException {
+                                        responseContext.getHeaders().add("Access-Control-Allow-origin", "*");
+                                        responseContext.getHeaders().add("Access-Control-Allow-headers",
+                                                "Origin, content-type, accept, authorization");
+                                        responseContext.getHeaders().add("Access-Control-Allow-Methods",
+                                                "GET, POST, PUT, DELETE, OPTIONS, HEAD");
+                                    }
+                                });
 
-
-        handler.addServlet(new ServletHolder(new ServletContainer(resourceConfig)), "/*");
+                handler.addServlet(new ServletHolder(new ServletContainer(resourceConfig)), "/*");
 
         server.setHandler(handler);
         server.start();

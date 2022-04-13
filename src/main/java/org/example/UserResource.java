@@ -9,6 +9,7 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 
+import java.util.Base64;
 import java.util.List;
 
 @Path("user")
@@ -48,10 +49,19 @@ public class UserResource {
         return user;
     }
 
+    @GET
+    @Path("get-by-name/{name}")
+    @Produces(MediaType.TEXT_PLAIN)
+    public String getUserIdByName(@PathParam("name") String name) throws ApplicationException {
+        System.out.println("get-by-name " + name);
+        return userDAO.getUserIdByName(name);
+    }
+
     @POST
     @Path("add")
-    public User addUser(User appUser) {
-        return userDAO.addUser(appUser);
+    public User addUser(User user) {
+        System.out.println("post " + user);
+        return userDAO.addUser(user);
     }
 
     @POST

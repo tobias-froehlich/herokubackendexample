@@ -29,22 +29,12 @@ public class Migrator {
         this.migrationStopped = false;
         this.dslContext = dslContext;
         migrationSteps = new ArrayList<>();
-        migrationSteps.add(new MigrationStep("Creating student table.", ctx -> {
-            ctx.createTable("student")
-                    .column("fist_name", VARCHAR(32))
-                    .column("last_name", VARCHAR(32)).execute();
-        }));
-        migrationSteps.add(new MigrationStep("Correcting column name.", ctx -> {
-            ctx.alterTable("student")
-                    .renameColumn("fist_name")
-                    .to("first_name")
-                    .execute();
-        }));
         migrationSteps.add(new MigrationStep("Creating user table.", cxt -> {
             cxt.createTableIfNotExists("user_account")
                     .column("id", VARCHAR(36))
                     .column("version", VARCHAR(36))
-                    .column("name", VARCHAR(36))
+                    .column("name", VARCHAR(16))
+                    .column("normalized_name", VARCHAR(16))
                     .column("password", VARCHAR(36))
                     .execute();
         }));
@@ -58,21 +48,15 @@ public class Migrator {
                             DSL.constraint("pk_user").primaryKey("id")
                     ).execute();
         }));
-        migrationSteps.add(new MigrationStep("Adding Unique constraint to user name.", cxt -> {
-            cxt.alterTable("user_account")
+        migrationSteps.add(new MigrationStep("Adding Unique constraint to user name.", ctx -> {
+            ctx.alterTable("user_account")
                     .add(
                             DSL.constraint("unique_constraint_user_name").unique("name")
                     ).execute();
-        }));
-        migrationSteps.add(new MigrationStep("Add example data.", ctx -> {
-            ctx.insertInto(table("student"))
-                    .set(field("first_name"), "Aste")
-                    .set(field("last_name"), "Rix")
-                    .execute();
-            ctx.insertInto(table("student"))
-                    .set(field("first_name"), "Obe")
-                    .set(field("last_name"), "Lix")
-                    .execute();
+            ctx.alterTable("user_account")
+                    .add(
+                            DSL.constraint("unique_normalized_name").unique("normalized_name")
+                    ).execute();
         }));
 //        migrationSteps.add(new MigrationStep("Add example user.", ctx -> {
 //            ctx.insertInto(table("user_account"))

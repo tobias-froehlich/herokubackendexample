@@ -83,6 +83,46 @@ public class UserDAOTest extends TestWithDB {
     }
 
     @Test
+    public void testGetUserByName() {
+        dslContext.insertInto(table("user_account"))
+                .set(field("id"), "test-id")
+                .set(field("version"), "test-version")
+                .set(field("name"), "John")
+                .set(field("password"), "johns-password")
+                .execute();
+        dslContext.insertInto(table("user_account"))
+                .set(field("id"), "test-id2")
+                .set(field("version"), "test-version2")
+                .set(field("name"), "Joe")
+                .set(field("password"), "joes-password")
+                .execute();
+        String expected = "test-id";
+        String actual = userDAO.getUserIdByName("John");
+        assertThat(actual).isEqualTo(expected);
+    }
+
+//    @Test
+//    public void testTryGetUserByNameWithWrongPassword() {
+//        dslContext.insertInto(table("user_account"))
+//                .set(field("id"), "test-id")
+//                .set(field("version"), "test-version")
+//                .set(field("name"), "John")
+//                .set(field("password"), "johns-password")
+//                .execute();
+//        dslContext.insertInto(table("user_account"))
+//                .set(field("id"), "test-id2")
+//                .set(field("version"), "test-version2")
+//                .set(field("name"), "Joe")
+//                .set(field("password"), "joes-password")
+//                .execute();
+//
+//        assertThatThrownBy(() -> {
+//            userDAO.getUserByName("John", makeAuth("test-id", "joes-password"));
+//        }).isInstanceOf(ApplicationException.class).hasMessage("Wrong credentials.");
+//
+//    }
+
+    @Test
     public void testAddUser() {
         User user = new User(null, null, "John", "johns-password");
         User addedUser = userDAO.addUser(user);
@@ -101,6 +141,34 @@ public class UserDAOTest extends TestWithDB {
         assertThatThrownBy(() -> {
             userDAO.addUser(user);
         }).isInstanceOf(ApplicationException.class).hasMessage("Cannot insert user. User with name John already exists.");
+    }
+
+    @Test
+    public void testAddUserWithMaximumLengthName() {
+        User user = new User(null, null, "abcdefghijklmnop", "johns-password");
+        User addedUser = userDAO.addUser(user);
+        String id = addedUser.getId();
+        assertThat(addedUser.getName()).isEqualTo("abcdefghijklmnop");
+        assertThat(addedUser.getPassword()).isEqualTo("johns-password");
+        List<User> usersFromDb = dslContext.selectFrom("user_account")
+                .where(field("id").eq(id)).fetch(new UserDAO.UserMapper());
+        assertThat(usersFromDb).containsExactlyInAnyOrderElementsOf(List.of(addedUser));
+    }
+
+    @Test
+    public void testTryToAddUserWithTooLongUsername() {
+        User user = new User(null, null, "abcdefghijklmnopq", "johns-password");
+        assertThatThrownBy(() -> {
+            userDAO.addUser(user);
+        }).isInstanceOf(ApplicationException.class).hasMessage("Invalid user name.");
+    }
+
+    @Test
+    public void testTryToAddUserWithInvalidCharacters() {
+        User user = new User(null, null, "abc-def", "johns-password");
+        assertThatThrownBy(() -> {
+            userDAO.addUser(user);
+        }).isInstanceOf(ApplicationException.class).hasMessage("Invalid user name.");
     }
 
     @Test
@@ -141,6 +209,27 @@ public class UserDAOTest extends TestWithDB {
         List<User> usersFromDb = dslContext.selectFrom("user_account")
                 .fetch(new UserDAO.UserMapper());
         assertThat(usersFromDb).containsOnly(addedUser, otherUser);
+    }
+
+    @Test
+    public void testTryToUpdateUserWithOutdatedVersion() {
+        User addedUser = userDAO.addUser(new User(null, null, "John", "johns-password"));
+        userDAO.addUser(new User(null, null, "Joe", "joes-password"));
+
+        User updatedUser = userDAO.updateUser(new User(
+                addedUser.getId(),
+                addedUser.getVersion(),
+                "JohnsNewName",
+                "johns-new-password"
+        ), makeAuth(addedUser.getId(), "johns-password"));
+        assertThatThrownBy(() -> {
+                userDAO.updateUser(new User(
+                        addedUser.getId(),
+                        addedUser.getVersion(),
+                        "JohnsNewName",
+                        "johns-even-newer-password"
+                ), makeAuth(addedUser.getId(), "johns-new-password"));
+        }).isInstanceOf(ApplicationException.class).hasMessage("The user does not exist or the version is outdated.");
     }
 
     @Test
